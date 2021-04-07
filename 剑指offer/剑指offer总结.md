@@ -306,5 +306,156 @@ class Solution {
 }
 ```
 
+## 11旋转数组的最小数字
 
+把一个数组最开始的若干个元素搬到数组的末尾，我们称之为数组的旋转。输入一个递增排序的数组的一个旋转，输出旋转数组的最小元素。例如，数组 [3,4,5,1,2] 为 [1,2,3,4,5] 的一个旋转，该数组的最小值为1。 
+
+```java
+//思路：二分法（直接排序找最小也可以）
+class Solution {
+    public int minArray(int[] numbers) {
+       int i=0,j=numbers.length-1,m=0;
+        while(i<j){
+            m = (i+j)/2;
+            if(numbers[m]<numbers[j]) j=m;
+            else if(numbers[m]>numbers[j]) i=m+1;
+            else j--;//相等时不能确定最小值在哪一部分，由于此时的j有m替代，忽略右端点
+        }
+        return numbers[i];
+    }
+}
+```
+
+## 12矩阵中的路径
+
+请设计一个函数，用来判断在一个矩阵中是否存在一条包含某字符串所有字符的路径。路径可以从矩阵中的任意一格开始，每一步可以在矩阵中向左、右、上、下移动一格。如果一条路径经过了矩阵的某一格，那么该路径不能再次进入该格子。例如，在下面的3×4的矩阵中包含一条字符串“bfce”的路径（路径中的字母用加粗标出）。
+
+[["a","b","c","e"],
+["s","f","c","s"],
+["a","d","e","e"]]
+
+但矩阵中不包含字符串“abfb”的路径，因为字符串的第一个字符b占据了矩阵中的第一行第二个格子之后，路径不能再次进入这个格子。
+
+**思路：**本问题是典型的矩阵搜索问题，可使用 **深度优先搜索（DFS）+回溯+ 剪枝** 解决。
+**深度优先搜索**： 可以理解为暴力法遍历矩阵中所有字符串可能性。DFS 通过递归，先朝一个方向搜到底，再回溯至上个节点，沿另一个方向搜索，以此类推。
+**剪枝**： 在搜索中，遇到 这条路不可能和目标字符串匹配成功 的情况（例如：此矩阵元素和目标字符不同、此元素已被访问），则应立即返回，称之为 可行性剪枝 。
+
+![image-20210407154912062](../picture/image-20210407154912062.png)
+
+```java
+//DFS搜索时分四步：1.递归参数2.终止条件3.递推工作4.返回值
+//不回溯，可能造成分支污染
+class Solution {
+    public boolean exist(char[][] board, String word) {
+        char words[] = word.toCharArray();
+        for(int i=0;i<board.length;i++){
+            for(int j=0;j<board[0].length;j++){
+                if(dfs(board,words,i,j,0)) return true;
+            }
+        }
+        return false;
+    }
+    public boolean dfs(char[][] board,char [] words,int i,int j,int k){
+        if(i<0||i>=board.length||j<0||j>=board[0].length||board[i][j]!=words[k]) return false;
+        if(k==words.length-1) return true;
+        board[i][j] = '\0';
+        boolean res = dfs(board,words,i-1,j,k+1)||
+                      dfs(board,words,i,j-1,k+1)||
+                      dfs(board,words,i,j+1,k+1)||
+                      dfs(board,words,i+1,j,k+1);
+        board[i][j] = words[k];
+        return res;
+    }
+}
+
+```
+
+## 13机器人运动范围
+
+地上有一个m行n列的方格，从坐标 [0,0] 到坐标 [m-1,n-1] 。一个机器人从坐标 [0, 0] 的格子开始移动，它每次可以向左、右、上、下移动一格（不能移动到方格外），也不能进入行坐标和列坐标的数位之和大于k的格子。例如，当k为18时，机器人能够进入方格 [35, 37] ，因为3+5+3+7=18。但它不能进入方格 [35, 38]，因为3+5+3+8=19。请问该机器人能够到达多少个格子？
+
+```java
+//DFS + 剪枝 ；关键在于搜索方向变为向右或者向下
+//写法一：
+class Solution {
+    int res;
+    int k;
+    boolean memary[][] ;
+    public int movingCount(int m, int n, int k) {
+        memary = new boolean[m][n];
+        res = 0;
+        this.k = k;
+        dfs(m,n,0,0);
+        return res;
+    }
+    public void dfs(int m,int n,int i,int j){
+        int t = i%10+i/10+i/100+j%10+j/10+j/100;
+        if(i>m-1||j>n-1||memary[i][j]) return;
+        if(t>k) return;
+        memary[i][j] = true;
+        res++;
+        dfs(m,n,i+1,j);
+        dfs(m,n,i,j+1);
+
+    }
+}
+//写法二：
+class Solution {
+    int m, n, k;
+    boolean[][] visited;
+    public int movingCount(int m, int n, int k) {
+        this.m = m; this.n = n; this.k = k;
+        this.visited = new boolean[m][n];
+        return dfs(0, 0, 0, 0);
+    }
+    public int dfs(int i, int j, int si, int sj) {
+        if(i >= m || j >= n || k < si + sj || visited[i][j]) return 0;
+        visited[i][j] = true;
+        return 1 + dfs(i + 1, j, (i + 1) % 10 != 0 ? si + 1 : si - 8, sj) + dfs(i, j + 1, si, (j + 1) % 10 != 0 ? sj + 1 : sj - 8);
+    }
+}
+```
+
+![image-20210407170329766](../picture/image-20210407170329766.png)
+
+```java
+class Solution {
+public int movingCount(int m, int n, int k) {
+    //临时变量visited记录格子是否被访问过
+    boolean[][] visited = new boolean[m][n];
+    int res = 0;
+    //创建一个队列，保存的是访问到的格子坐标，是个二维数组
+    Queue<int[]> queue = new LinkedList<>();
+    // 把起始结点存入队列
+    queue.add(new int[]{0, 0});
+    while (queue.size() > 0) {
+        // 将队列的第一个结点出队，访问
+        int[] temp = queue.poll();
+        int x = temp[0], y = temp[1];
+        // 不合格的坐标格子
+        if (x >= m || y >= n || get(x) + get(y) > k || visited[x][y])
+            continue;
+        // 将格子标记为已经访问过
+        visited[x][y] = true;
+        // 满足条件的格子数加一
+        res++;
+        // 向右边移动
+        queue.add(new int[]{x + 1, y});
+        // 向下移动
+        queue.add(new int[]{x, y + 1});
+    }
+    return res;
+}
+
+// 计算一个数的各个位数之和
+    private int get(int x) {
+        int res = 0;
+        while (x != 0) {
+            res += x % 10;
+            x /= 10;
+        }
+        return res;
+    }
+}
+```
 
